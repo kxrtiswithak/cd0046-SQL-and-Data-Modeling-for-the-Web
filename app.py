@@ -34,7 +34,11 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 
 def format_datetime(value, format='medium'):
-  date = dateutil.parser.parse(value)
+  date = -1
+  if isinstance(value, str):
+    date = dateutil.parser.parse(value)
+  else:
+    date = value
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
@@ -73,7 +77,15 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   venue = Venue.query.get(venue_id)
-  shows = Show.query.join(Artist, Venue).filter_by(id=venue_id)
+  shows = db.session.query(
+    Show.venue_id,
+    Artist.image_link,
+    Artist.id,
+    Artist.name,
+    Show.start_time,
+    Venue.name,
+    Venue.image_link,
+    ).join(Venue).join(Artist).filter(Show.venue_id == venue_id)
   upcoming_shows = shows.filter(Show.start_time >= datetime.now()).all()
   past_shows = shows.filter(Show.start_time < datetime.now()).all()
 
@@ -89,7 +101,7 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  form = VenueForm(request.form)
+  form = VenueForm(obj=request.form)
   venue_name = request.get_json()['name']
   error = False
   error_text = 'Error occured: Venue ' + venue_name + ' could not be listed.'
@@ -157,7 +169,14 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.get(artist_id)
-  shows = Show.query.join(Venue, Artist).filter_by(id=artist_id)
+  shows = db.session.query(
+    Show.artist_id,
+    Show.venue_id,
+    Show.start_time,
+    Venue.name,
+    Venue.image_link,
+  ).join(Venue).filter(Show.artist_id == artist_id)
+  # shows = Show.query.join(Artist, Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Artist.id == artist_id)
   upcoming_shows = shows.filter(Show.start_time >= datetime.now()).all()
   past_shows = shows.filter(Show.start_time < datetime.now()).all()
 
@@ -168,13 +187,13 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   artist = Artist.query.get(artist_id)
-  form = ArtistForm(artist)
+  form = ArtistForm(obj=artist)
   
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  form = ArtistForm(request.form)
+  form = ArtistForm(obj=request.form)
   artist = Artist.query.get(artist_id)
   artist_name = request.get_json()['name']
   error = False
@@ -201,13 +220,13 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   venue = Venue.query.get(venue_id)
-  form = VenueForm(venue)
+  form = VenueForm(obj=venue)
   
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  form = VenueForm(request.form)
+  form = VenueForm(obj=request.form)
   venue = Venue.query.get(venue_id)
   venue_name = request.get_json()['name']
   error = False
@@ -241,7 +260,7 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-  form = ArtistForm(request.form)
+  form = ArtistForm(obj=request.form)
   artist_name = request.get_json()['name']
   error = False
   error_text = 'Error occured: Artist ' + artist_name + ' could not be listed.'
@@ -297,7 +316,14 @@ def delete_artist(artist_id):
 
 @app.route('/shows')
 def shows():
-  shows = Show.query.join(Venue, Artist).all()
+  shows = db.session.query(
+    Show.venue_id,
+    Venue.name,
+    Show.artist_id,
+    Show.start_time,
+    Artist.name,
+    Artist.image_link
+  ).join(Venue).join(Artist).all()
   return render_template('pages/shows.html', shows=shows)
 
 @app.route('/shows/create')
@@ -308,7 +334,7 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  form = ShowForm(request.form)
+  form = ShowForm(obj=request.form)
   show_name = request.get_json()['name']
   error = False
   error_text = 'Error occured: Failed to create show ' + show_name + '.'
