@@ -47,9 +47,9 @@
 	</div>
 </div>
 <section>
-	<h2 class="monospace">{{ venue.upcoming_shows_count }} Upcoming {% if venue.upcoming_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
+	<h2 class="monospace">{{ upcoming_shows|length }} Upcoming {% if upcoming_shows|length == 1 %}Show{% else %}Shows{% endif %}</h2>
 	<div class="row">
-		{%for show in venue.upcoming_shows %}
+		{%for show in upcoming_shows %}
 		<div class="col-sm-4">
 			<div class="tile tile-show">
 				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
@@ -61,9 +61,9 @@
 	</div>
 </section>
 <section>
-	<h2 class="monospace">{{ venue.past_shows_count }} Past {% if venue.past_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
+	<h2 class="monospace">{{ past_shows|length }} Past {% if past_shows|length == 1 %}Show{% else %}Shows{% endif %}</h2>
 	<div class="row">
-		{%for show in venue.past_shows %}
+		{%for show in past_shows %}
 		<div class="col-sm-4">
 			<div class="tile tile-show">
 				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
@@ -76,6 +76,9 @@
 </section>
 
 <a href="/venues/{{ venue.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
+<form action="/venues/{{ venue.id }}" method="delete">
+	<button class="btn btn-danger btn-lg" type="submit">Delete</button>
+</form>
 
 {% endblock %}
 
