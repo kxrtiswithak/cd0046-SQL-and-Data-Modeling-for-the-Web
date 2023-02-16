@@ -8,7 +8,7 @@ import json
 import sys
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -68,7 +68,7 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  search_term = request.get_json()['search_term']
+  search_term = request.form.get('search_term')
   response = Venue.query.filter(
     Venue.name.ilike('%' + search_term + '%')).all()
   
@@ -101,17 +101,17 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  form = VenueForm(obj=request.form)
-  venue_name = request.get_json()['name']
+  form = VenueForm(request.form)
+  venue_name = request.form.get('name')
   error = False
-  error_text = 'Error occured: Venue ' + venue_name + ' could not be listed.'
+  error_text = 'Error occured: Venue \'' + venue_name + '\' could not be listed.'
 
   try:
     venue = Venue()
     form.populate_obj(venue)
     db.session.add(venue)
     db.session.commit()
-    flash('Venue ' + venue_name + ' was successfully listed!')
+    flash('Venue \'' + venue_name + '\' was successfully listed!')
   except:
     error = True
     db.session.rollback()
@@ -120,16 +120,12 @@ def create_venue_submission():
   finally:
     db.session.close()
 
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('index'))
+  return redirect(url_for('index'))
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
   venue = Venue.query.get(venue_id)
-  error = False
-  error_text = 'Error occured: Venue ' + venue.name + ' could not be deleted.'
+  error_text = 'Error occured: Venue \'' + venue.name + '\' could not be deleted.'
 
   if venue is None:
     redirect(url_for('not_found_error', error='Venue not found'))
@@ -137,19 +133,15 @@ def delete_venue(venue_id):
   try:
     db.session.delete(venue)
     db.session.commit()
-    flash('Venue ' + venue.name + ' was successfully deleted!')
+    flash('Venue \'' + venue.name + '\' was successfully deleted!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
     flash(error_text)
   finally:
     db.session.close()
   
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('index'))
+  return redirect(url_for('index'))
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -160,7 +152,7 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  search_term = request.get_json()['search_term']
+  search_term = request.form.get('search_term')
   response = Artist.query.filter(
     Artist.name.ilike('%' + search_term + '%')).all()
   
@@ -193,29 +185,24 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  form = ArtistForm(obj=request.form)
   artist = Artist.query.get(artist_id)
-  artist_name = request.get_json()['name']
-  error = False
-  error_text = 'Error occured: Artist ' + artist_name + ' could not be edited.'
+  form = ArtistForm(request.form,obj=artist)
+  artist_name = request.form.get('name')
+  error_text = 'Error occured: Artist \'' + artist_name + '\' could not be edited.'
 
   try:
     form.populate_obj(artist)
     db.session.add(artist)
     db.session.commit()
-    flash('Artist ' + artist_name + ' was successfully edited!')
+    flash('Artist \'' + artist_name + '\' was successfully edited!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
     flash(error_text)
   finally:
     db.session.close()
 
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('show_artist', artist_id=artist_id))
+  return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -226,29 +213,22 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  form = VenueForm(obj=request.form)
   venue = Venue.query.get(venue_id)
-  venue_name = request.get_json()['name']
-  error = False
-  error_text = 'Error occured: Venue ' + venue_name + ' could not be edited.'
+  form = VenueForm(request.form,obj=venue)
 
   try:
     form.populate_obj(venue)
     db.session.add(venue)
     db.session.commit()
-    flash('Venue ' + venue_name + ' was successfully edited!')
+    flash('Venue \'' + venue.name + '\' was successfully edited!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
-    flash(error_text)
+    flash('Error occured: Venue \'' + request.form.get('name') + '\' could not be edited.')
   finally:
     db.session.close()
 
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('show_venue', venue_id=venue_id))
+  return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -260,35 +240,29 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-  form = ArtistForm(obj=request.form)
-  artist_name = request.get_json()['name']
-  error = False
-  error_text = 'Error occured: Artist ' + artist_name + ' could not be listed.'
+  form = ArtistForm(request.form)
+  artist_name = request.form.get('name')
+  error_text = 'Error occured: Artist \'' + artist_name + '\' could not be listed.'
 
   try:
     artist = Artist()
     form.populate_obj(artist)
     db.session.add(artist)
     db.session.commit()
-    flash('Artist ' + artist_name + ' was successfully listed!')
+    flash('Artist \'' + artist_name + '\' was successfully listed!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
     flash(error_text)
   finally:
     db.session.close()
 
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('index'))
+  return redirect(url_for('index'))
 
 @app.route('/artists/<artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):
   artist = Artist.query.get(artist_id)
-  error = False
-  error_text = 'Error occured: Artist ' + artist.name + ' could not be deleted.'
+  error_text = 'Error occured: Artist \'' + artist.name + '\' could not be deleted.'
 
   if artist is None:
     redirect(url_for('not_found_error', error='Artist not found'))
@@ -296,19 +270,15 @@ def delete_artist(artist_id):
   try:
     db.session.delete(artist)
     db.session.commit()
-    flash('Artist ' + artist.name + ' was successfully deleted!')
+    flash('Artist \'' + artist.name + '\' was successfully deleted!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
     flash(error_text)
   finally:
     db.session.close()
   
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('index'))
+  return redirect(url_for('index'))
 
 
 #  Shows
@@ -334,29 +304,22 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  form = ShowForm(obj=request.form)
-  show_name = request.get_json()['name']
-  error = False
-  error_text = 'Error occured: Failed to create show ' + show_name + '.'
+  form = ShowForm(request.form)
 
   try:
     show = Show()
     form.populate_obj(show)
     db.session.add(show)
     db.session.commit()
-    flash('Show ' + show_name + ' was successfully listed!')
+    flash('Show was successfully listed!')
   except:
-    error = True
     db.session.rollback()
     print(sys.exc_info())
-    flash(error_text)
+    flash('Error occured: Failed to create show.')
   finally:
     db.session.close()
 
-  if error:
-    redirect(url_for('server_error', error=error_text))
-  else:
-    return redirect(url_for('index'))
+  return redirect(url_for('index'))
 
 @app.errorhandler(404)
 def not_found_error(error):

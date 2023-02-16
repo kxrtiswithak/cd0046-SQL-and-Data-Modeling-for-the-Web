@@ -18,14 +18,14 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     
     genres = db.Column(db.ARRAY(db.String(20)))
-    website = db.Column(db.String(120))
+    website_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
 
     shows = db.relationship('Show', backref='venue', lazy=True)
     
     def __repr__(self):
-        return f'<Venue - id: {self.id}, name: {self.name}, genres: {self.genres}, address: {self.address}, city: {self.city}, state: {self.state}, phone: {self.phone}, website: {self.website}, facebook_link: {self.facebook_link}, seeking_venue: {self.seeking_talent}, seeking_description: {self.seeking_description}, image_link: {self.image_link}>'
+        return f'<Venue - id: {self.id}, name: {self.name}, genres: {self.genres}, address: {self.address}, city: {self.city}, state: {self.state}, phone: {self.phone}, website: {self.website_link}, facebook_link: {self.facebook_link}, seeking_talent: {self.seeking_talent}, seeking_description: {self.seeking_description}, image_link: {self.image_link}>'
 
 class Artist(db.Model):
     __tablename__ = 'artists'
@@ -40,14 +40,14 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
 
     genres = db.Column(db.ARRAY(db.String(20)))
-    website = db.Column(db.String(120))
+    website_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=True)
     seeking_description = db.Column(db.String(500))
 
     shows = db.relationship('Show', backref='artist', lazy=True)
 
     def __repr__(self):
-        return f'<Artist - id: {self.id}, name: {self.name}, genres: {self.genres}, city: {self.city}, state: {self.state}, phone: {self.phone}, website: {self.website}, facebook_link: {self.facebook_link}, seeking_venue: {self.seeking_venue}, seeking_description: {self.seeking_description}, image_link: {self.image_link}>'
+        return f'<Artist - id: {self.id}, name: {self.name}, genres: {self.genres}, city: {self.city}, state: {self.state}, phone: {self.phone}, website: {self.website_link}, facebook_link: {self.facebook_link}, seeking_venue: {self.seeking_venue}, seeking_description: {self.seeking_description}, image_link: {self.image_link}>'
 
 class Show(db.Model):
     __tablename__ = 'shows'
